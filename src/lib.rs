@@ -61,8 +61,7 @@ impl CompactSize {
                     return Err(BitcoinError::InsufficientBytes);
                 }
                 let val = u64::from_le_bytes([
-                    bytes[1], bytes[2], bytes[3], bytes[4],
-                    bytes[5], bytes[6], bytes[7], bytes[8],
+                    bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7], bytes[8],
                 ]);
                 Ok((CompactSize::new(val), 9))
             }
@@ -76,7 +75,9 @@ pub struct Txid(pub [u8; 32]);
 
 impl Serialize for Txid {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: serde::Serializer {
+    where
+        S: serde::Serializer,
+    {
         let hex_string = hex::encode(self.0);
         serializer.serialize_str(&hex_string)
     }
@@ -84,7 +85,9 @@ impl Serialize for Txid {
 
 impl<'de> Deserialize<'de> for Txid {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         let s = String::deserialize(deserializer)?;
         let bytes = hex::decode(&s).map_err(serde::de::Error::custom)?;
         if bytes.len() != 32 {
@@ -197,7 +200,10 @@ impl TransactionInput {
 
         let sequence = u32::from_le_bytes(bytes[seq_index..seq_index + 4].try_into().unwrap());
 
-        Ok((TransactionInput::new(outpoint, script, sequence), seq_index + 4))
+        Ok((
+            TransactionInput::new(outpoint, script, sequence),
+            seq_index + 4,
+        ))
     }
 }
 
@@ -252,7 +258,10 @@ impl BitcoinTransaction {
 
         let lock_time = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap());
 
-        Ok((BitcoinTransaction::new(version, inputs, lock_time), offset + 4))
+        Ok((
+            BitcoinTransaction::new(version, inputs, lock_time),
+            offset + 4,
+        ))
     }
 }
 
@@ -263,7 +272,12 @@ impl fmt::Display for BitcoinTransaction {
 
         for input in &self.inputs {
             writeln!(f, "  Previous Output Vout: {}", input.previous_output.vout)?;
-            writeln!(f, "  ScriptSig: {} bytes: {:?}", input.script_sig.len(), input.script_sig)?;
+            writeln!(
+                f,
+                "  ScriptSig: {} bytes: {:?}",
+                input.script_sig.len(),
+                input.script_sig
+            )?;
             writeln!(f, "  Sequence: {}", input.sequence)?;
         }
 
